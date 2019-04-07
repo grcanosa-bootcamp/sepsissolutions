@@ -1,0 +1,47 @@
+version: '2'
+services:
+  datagenerator:
+    build: ./services/datagenerator/
+    container_name: sepsis_datagen
+    volumes:
+      - ./volumes/data:/data/
+    
+  backend:
+    container_name: sepsis_backend
+    restart: always
+    #Por ahora aqui hay un servidor web, luego habrá que poner lo correcto.
+    build: ./services/back/
+    volumes:
+      - ./volumes/data:/data/
+    environment:
+      - DATADIR=/data
+      - CASSANDRAHOST=sepsis_cassandra
+      - RESTAPIPORT=80
+      - CASSANDRA_CONNECTION_TIMEOUT=121
+
+  frontend:
+    build: ./services/frontend/
+    container_name: sepsis_frontend
+    ports:
+      - 5000:80
+    volumes:
+      - ./services/frontend/www/:/etc/nginx/html/
+
+  cassandradb:
+    image: cassandra:3.11.3
+    container_name: sepsis_cassandra
+    volumes:
+      - ./volumes/cassandradb:/var/lib/cassandra  
+    ports:
+      - "9042:9042"
+    logging:
+      driver: none
+
+networks: 
+  default:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.28.0.0/24
+        gateway: 172.28.0.1
